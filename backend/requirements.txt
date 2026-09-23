@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+opencv-python
+mediapipe
+numpy
+websockets
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]
+qrcode[pil]

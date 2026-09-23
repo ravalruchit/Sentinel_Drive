@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SentinelDrive — Driver Mode</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0a0e1a;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 16px;
+      user-select: none;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #1f2937;
+    }
+    .header-icon {
+      width: 36px; height: 36px;
+      background: rgba(0,212,255,0.1);
+      border: 1px solid #00d4ff;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .header h1 { font-size: 16px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .header p  { font-size: 11px; color: #6b7280; letter-spacing: 1px; }
+
+    /* Status bar */
+    .status-bar {
+      display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .badge {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 8px; border: 1px solid;
+      font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+    }
+    .badge-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .badge.connected  { border-color: rgba(0,255,136,0.3); color: #00ff88; background: rgba(0,255,136,0.05); }
+    .badge.connecting { border-color: rgba(255,215,0,0.3);  color: #ffd700; background: rgba(255,215,0,0.05); }
+    .badge.offline    { border-color: rgba(255,59,59,0.3);  color: #ff3b3b; background: rgba(255,59,59,0.05); }
+    .badge.gps-on     { border-color: rgba(0,212,255,0.3);  color: #00d4ff; background: rgba(0,212,255,0.05); }
+
+    /* Driver selector */
+    .section { margin-bottom: 16px; }
+    .section label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; }
+    select, input[type=text] {
+      width: 100%; background: #111827; border: 1px solid #1f2937;
+      color: #fff; border-radius: 10px; padding: 10px 14px; font-size: 14px;
+      outline: none; appearance: none;
+    }
+    select:focus, input:focus { border-color: #00d4ff; }
+
+    /* Speed display */
+    .speed-display {
+      background: #111827; border: 1px solid #1f2937; border-radius: 16px;
+      padding: 20px; text-align: center; margin-bottom: 16px;
+      position: relative; overflow: hidden;
+    }
+    .speed-display.overspeed { border-color: rgba(255,59,59,0.6); background: rgba(255,59,59,0.05); }
+    .speed-num { font-size: 64px; font-weight: 800; line-height: 1; }
+    .speed-unit { font-size: 14px; color: #6b7280; margin-top: 4px; }
+    .speed-status { font-size: 12px; font-weight: 700; letter-spacing: 2px; margin-top: 8px; }
+
+    /* Sensor readings */
+    .sensor-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px; margin-bottom: 16px;
+    }
+    .sensor-card {
+      background: #111827; border: 1px solid #1f2937; border-radius: 12px;
+      padding: 12px; text-align: center;
+    }
+    .sensor-card.alert { border-color: rgba(255,59,59,0.5); background: rgba(255,59,59,0.05); }
+    .sensor-card.warn  { border-color: rgba(255,215,0,0.5);  background: rgba(255,215,0,0.05); }
+    .sensor-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .sensor-val   { font-size: 20px; font-weight: 700; }
+    .sensor-unit  { font-size: 10px; color: #6b7280; }
+
+    /* Action buttons */
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+    .btn {
+      border: none; border-radius: 14px; padding: 18px 12px;
+      font-size: 13px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      transition: transform 0.1s, opacity 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { transform: scale(0.95); opacity: 0.85; }
+    .btn-icon { font-size: 28px; }
+
+    .btn-brake  { background: rgba(255,59,59,0.15);  border: 2px solid #ff3b3b; color: #ff3b3b; }
+    .btn-accel  { background: rgba(0,255,136,0.1);   border: 2px solid #00ff88; color: #00ff88; }
+    .btn-turn-l { background: rgba(0,212,255,0.1);   border: 2px solid #00d4ff; color: #00d4ff; }
+    .btn-turn-r { background: rgba(0,212,255,0.1);   border: 2px solid #00d4ff; color: #00d4ff; }
+
+    /* Big brake button */
+    .btn-emergency {
+      width: 100%; padding: 22px; border-radius: 16px;
+      background: rgba(255,59,59,0.2); border: 2px solid #ff3b3b;
+      color: #ff3b3b; font-size: 16px; font-weight: 800;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; display: flex; align-items: center;
+      justify-content: center; gap: 10px; margin-bottom: 16px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-emergency:active { background: rgba(255,59,59,0.4); transform: scale(0.98); }
+
+    /* Auto-detect toggle */
+    .toggle-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #111827; border: 1px solid #1f2937; border-radius: 12px;
+      padding: 14px 16px; margin-bottom: 16px;
+    }
+    .toggle-label { font-size: 13px; }
+    .toggle-sub   { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .toggle {
+      width: 48px; height: 26px; background: #1f2937; border-radius: 13px;
+      position: relative; cursor: pointer; transition: background 0.2s; flex-shrink: 0;
+    }
+    .toggle.on { background: #00d4ff; }
+    .toggle::after {
+      content: ''; position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px; background: #fff; border-radius: 50%;
+      transition: transform 0.2s;
+    }
+    .toggle.on::after { transform: translateX(22px); }
+
+    /* Event log */
+    .event-log {
+      background: #111827; border: 1px solid #1f2937; border-radius: 12px;
+      max-height: 160px; overflow-y: auto;
+    }
+    .event-log-header {
+      padding: 10px 14px; border-bottom: 1px solid #1f2937;
+      font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .event-item {
+      padding: 8px 14px; border-bottom: 1px solid #111827;
+      font-size: 12px; display: flex; gap: 8px; align-items: center;
+    }
+    .event-item.critical { color: #ff3b3b; }
+    .event-item.warning  { color: #ffd700; }
+    .event-time { color: #4b5563; font-size: 11px; flex-shrink: 0; }
+
+    /* Pulse animation */
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .pulse { animation: pulse 1s ease-in-out infinite; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 3px; }
+    ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">🚌</div>
+  <div>
+    <h1>SentinelDrive</h1>
+    <p>Driver Mode — Mobile Sensor Hub</p>
+  </div>
+</div>
+
+<!-- Status badges -->
+<div class="status-bar">
+  <div class="badge offline" id="conn-badge">
+    <div class="badge-dot" style="background:currentColor"></div>
+    <span id="conn-text">Offline</span>
+  </div>
+  <div class="badge connecting" id="gps-badge">
+    <div class="badge-dot" style="background:currentColor"></div>
+    <span id="gps-text">GPS Off</span>
+  </div>
+</div>
+
+<!-- Driver selector -->
+<div class="section">
+  <label>Select Driver</label>
+  <select id="driver-select">
+    <option value="DRV-001">DRV-001 — Arjun Sharma (Bus #101)</option>
+    <option value="DRV-002">DRV-002 — Priya Mehta (Bus #202)</option>
+    <option value="DRV-003">DRV-003 — Ravi Kumar (Bus #303)</option>
+    <option value="DRV-004">DRV-004 — Sneha Patel (Bus #404)</option>
+    <option value="DRV-005">DRV-005 — Mahesh Solanki (Bus #505)</option>
+    <option value="DRV-006">DRV-006 — Kavita Joshi (Bus #606)</option>
+  </select>
+</div>
+
+<!-- Server URL — auto-detected, no need to change -->
+<div class="section" style="display:none">
+  <label>Backend URL</label>
+  <input type="text" id="server-url" value="" placeholder="auto" />
+</div>
+
+<!-- Speed display -->
+<div class="speed-display" id="speed-display">
+  <div class="speed-num" id="speed-num" style="color:#00ff88">0</div>
+  <div class="speed-unit">km/h · GPS Speed</div>
+  <div class="speed-status" id="speed-status" style="color:#00ff88">NORMAL</div>
+</div>
+
+<!-- Manual Speed Control -->
+<button class="btn-emergency" id="accel-btn" style="background:rgba(0,255,136,0.15);border-color:#00ff88;color:#00ff88;margin-bottom:10px"
+  ontouchstart="accelStart(event)" ontouchend="accelEnd()"
+  onmousedown="accelStart(event)" onmouseup="accelEnd()" onmouseleave="accelEnd()">
+  🚀 &nbsp; HOLD TO ACCELERATE
+</button>
+
+<!-- Sensor readings -->
+<div class="sensor-grid">
+  <div class="sensor-card" id="card-accel">
+    <div class="sensor-label">Accel</div>
+    <div class="sensor-val" id="val-accel" style="color:#00ff88">0.0</div>
+    <div class="sensor-unit">m/s²</div>
+  </div>
+  <div class="sensor-card" id="card-brake">
+    <div class="sensor-label">Braking</div>
+    <div class="sensor-val" id="val-brake" style="color:#00d4ff">0.0</div>
+    <div class="sensor-unit">m/s²</div>
+  </div>
+  <div class="sensor-card" id="card-turn">
+    <div class="sensor-label">Lateral G</div>
+    <div class="sensor-val" id="val-turn" style="color:#00d4ff">0.0</div>
+    <div class="sensor-unit">m/s²</div>
+  </div>
+</div>
+
+<!-- Auto-detect toggle -->
+<div class="toggle-row">
+  <div>
+    <div class="toggle-label">📱 Auto-detect from phone sensors</div>
+    <div class="toggle-sub">Uses accelerometer + gyroscope + GPS</div>
+  </div>
+  <div class="toggle" id="auto-toggle" onclick="toggleAuto()"></div>
+</div>
+
+<!-- Manual action buttons -->
+<div class="btn-grid">
+  <button class="btn btn-accel"  onclick="sendPreset('harsh_accel')">
+    <span class="btn-icon">🚀</span>Harsh Accel
+  </button>
+  <button class="btn btn-turn-l" onclick="sendPreset('sharp_turn_left')">
+    <span class="btn-icon">↩️</span>Sharp Left
+  </button>
+  <button class="btn btn-turn-r" onclick="sendPreset('sharp_turn_right')">
+    <span class="btn-icon">↪️</span>Sharp Right
+  </button>
+  <button class="btn btn-accel"  onclick="sendPreset('overspeed')">
+    <span class="btn-icon">⚡</span>Overspeed
+  </button>
+</div>
+
+<!-- Big brake button -->
+<button class="btn-emergency" id="brake-btn"
+  ontouchstart="brakeStart()" ontouchend="brakeEnd()"
+  onmousedown="brakeStart()" onmouseup="brakeEnd()">
+  🛑 &nbsp; HOLD FOR HARSH BRAKE
+</button>
+
+<!-- Event log -->
+<div class="event-log">
+  <div class="event-log-header">📋 Sent Events</div>
+  <div id="event-list"></div>
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────────────────────
+// Use relative URLs — all requests go through Vite proxy → backend
+// This means the phone just opens http://10.74.153.221:3000/driver.html
+// and everything works without touching firewall or CORS
+const API = ''   // empty = relative to current origin
+let DRIVER_ID = 'DRV-001'
+let autoMode = false
+let gpsWatchId = null
+let motionEnabled = false
+let lastSpeed = 0
+let lastPost = 0
+let brakeHeld = false
+let brakeInterval = null
+
+// Smoothed sensor values
+let smoothAccel = 0
+let smoothBrake = 0
+let smoothLateral = 0
+const ALPHA = 0.3  // low-pass filter coefficient
+
+// ─── Init ─────────────────────────────────────────────────────────────────
+document.getElementById('driver-select').addEventListener('change', e => {
+  DRIVER_ID = e.target.value
+})
+
+// Test connection on load
+testConnection()
+setInterval(testConnection, 5000)
+
+async function testConnection() {
+  try {
+    const r = await fetch(`${API}/api/leaderboard`, { signal: AbortSignal.timeout(3000) })
+    if (r.ok) setConnected(true)
+    else setConnected(false)
+  } catch { setConnected(false) }
+}
+
+function setConnected(ok) {
+  const badge = document.getElementById('conn-badge')
+  const text  = document.getElementById('conn-text')
+  badge.className = `badge ${ok ? 'connected' : 'offline'}`
+  text.textContent = ok ? 'Connected' : 'Offline'
+}
+
+// ─── GPS ──────────────────────────────────────────────────────────────────
+function startGPS() {
+  if (!navigator.geolocation) {
+    document.getElementById('gps-text').textContent = 'No GPS'
+    return
+  }
+  document.getElementById('gps-text').textContent = 'Acquiring...'
+  gpsWatchId = navigator.geolocation.watchPosition(
+    pos => {
+      const speedMs = pos.coords.speed
+      const kmh = speedMs != null ? Math.round(speedMs * 3.6 * 10) / 10 : lastSpeed
+      lastSpeed = kmh
+      updateSpeedDisplay(kmh)
+      document.getElementById('gps-badge').className = 'badge gps-on'
+      document.getElementById('gps-text').textContent = `GPS ±${Math.round(pos.coords.accuracy)}m`
+
+      // Post GPS speed (throttled to 2s)
+      const now = Date.now()
+      if (now - lastPost > 2000) {
+        lastPost = now
+        postSensor({ speed: kmh, acceleration: smoothAccel, braking: smoothBrake, lateral_g: smoothLateral })
+      }    },
+    err => {
+      document.getElementById('gps-text').textContent = 'GPS Error'
+    },
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 10000 }
+  )
+}
+
+function stopGPS() {
+  if (gpsWatchId != null) {
+    navigator.geolocation.clearWatch(gpsWatchId)
+    gpsWatchId = null
+  }
+  document.getElementById('gps-badge').className = 'badge connecting'
+  document.getElementById('gps-text').textContent = 'GPS Off'
+}
+
+function updateSpeedDisplay(kmh) {
+  const el = document.getElementById('speed-num')
+  const disp = document.getElementById('speed-display')
+  const status = document.getElementById('speed-status')
+  el.textContent = Math.round(kmh)
+  if (kmh > 80) {
+    el.style.color = '#ff3b3b'
+    status.textContent = '⚠ OVERSPEED'
+    status.style.color = '#ff3b3b'
+    disp.className = 'speed-display overspeed'
+  } else if (kmh > 60) {
+    el.style.color = '#ffd700'
+    status.textContent = 'FAST'
+    status.style.color = '#ffd700'
+    disp.className = 'speed-display'
+  } else {
+    el.style.color = '#00ff88'
+    status.textContent = 'NORMAL'
+    status.style.color = '#00ff88'
+    disp.className = 'speed-display'
+  }
+}
+
+// ─── Motion sensor ────────────────────────────────────────────────────────
+async function requestMotion() {
+  // iOS 13+ requires permission
+  if (typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const perm = await DeviceMotionEvent.requestPermission()
+      if (perm !== 'granted') return false
+    } catch { return false }
+  }
+  return true
+}
+
+function startMotion() {
+  window.addEventListener('devicemotion', onMotion)
+  motionEnabled = true
+}
+
+function stopMotion() {
+  window.removeEventListener('devicemotion', onMotion)
+  motionEnabled = false
+}
+
+let lastMotionPost = 0
+
+function onMotion(e) {
+  const acc = e.accelerationIncludingGravity
+  if (!acc) return
+
+  // x = lateral (left/right), y = forward/back (accel/brake), z = vertical
+  const rawY = acc.y ?? 0   // forward/back
+  const rawX = acc.x ?? 0   // lateral
+
+  // Low-pass filter to smooth noise
+  smoothAccel   = ALPHA * Math.max(0, rawY)  + (1 - ALPHA) * smoothAccel
+  smoothBrake   = ALPHA * Math.min(0, rawY)  + (1 - ALPHA) * smoothBrake
+  smoothLateral = ALPHA * rawX               + (1 - ALPHA) * smoothLateral
+
+  const accelVal   = parseFloat(smoothAccel.toFixed(1))
+  const brakeVal   = parseFloat(smoothBrake.toFixed(1))
+  const lateralVal = parseFloat(smoothLateral.toFixed(1))
+
+  // Update UI
+  updateSensorCard('card-accel', 'val-accel', accelVal,   v => v > 8,  v => v > 4)
+  updateSensorCard('card-brake', 'val-brake', brakeVal,   v => v < -8, v => v < -4)
+  updateSensorCard('card-turn',  'val-turn',  lateralVal, v => Math.abs(v) > 7, v => Math.abs(v) > 4)
+
+  // Post to backend every 500ms
+  const now = Date.now()
+  if (now - lastMotionPost > 500) {
+    lastMotionPost = now
+    postSensor({
+      speed: lastSpeed,
+      acceleration: accelVal,
+      braking: brakeVal,
+      lateral_g: lateralVal,
+    })
+  }
+}
+
+function updateSensorCard(cardId, valId, value, isCritical, isWarn) {
+  const card = document.getElementById(cardId)
+  const val  = document.getElementById(valId)
+  val.textContent = value.toFixed(1)
+  if (isCritical(value)) {
+    card.className = 'sensor-card alert'
+    val.style.color = '#ff3b3b'
+  } else if (isWarn(value)) {
+    card.className = 'sensor-card warn'
+    val.style.color = '#ffd700'
+  } else {
+    card.className = 'sensor-card'
+    val.style.color = '#00d4ff'
+  }
+}
+
+// ─── Auto toggle ──────────────────────────────────────────────────────────
+async function toggleAuto() {
+  autoMode = !autoMode
+  const toggle = document.getElementById('auto-toggle')
+  toggle.className = `toggle ${autoMode ? 'on' : ''}`
+
+  if (autoMode) {
+    const ok = await requestMotion()
+    if (!ok) {
+      autoMode = false
+      toggle.className = 'toggle'
+      addEvent('warning', '⚠ Motion permission denied. Use manual buttons.')
+      return
+    }
+    startMotion()
+    startGPS()
+    addEvent('info', '✓ Auto-detect started — move the phone to generate events')
+  } else {
+    stopMotion()
+    stopGPS()
+    addEvent('info', '○ Auto-detect stopped')
+  }
+}
+
+// ─── Brake button ─────────────────────────────────────────────────────────
+function brakeStart() {
+  if (brakeHeld) return
+  brakeHeld = true
+  document.getElementById('brake-btn').style.background = 'rgba(255,59,59,0.4)'
+
+  // Send harsh brake immediately and every 300ms while held — speed drops fast
+  SPEED_EFFECT['harsh_brake']()
+  updateSpeedDisplay(lastSpeed)
+  postSensor({ ...PRESETS['harsh_brake'], speed: lastSpeed })
+  brakeInterval = setInterval(() => {
+    SPEED_EFFECT['harsh_brake']()
+    updateSpeedDisplay(lastSpeed)
+    postSensor({ ...PRESETS['harsh_brake'], speed: lastSpeed })
+  }, 300)
+}
+
+function brakeEnd() {
+  brakeHeld = false
+  clearInterval(brakeInterval)
+  document.getElementById('brake-btn').style.background = 'rgba(255,59,59,0.2)'
+}
+
+// ─── Presets ──────────────────────────────────────────────────────────────
+const PRESETS = {
+  harsh_brake:      { acceleration: 0,  braking: -13, lateral_g: 0.5 },
+  harsh_accel:      { acceleration: 10, braking: 0,   lateral_g: 0.5 },
+  sharp_turn_left:  { acceleration: 1,  braking: -2,  lateral_g: -9  },
+  sharp_turn_right: { acceleration: 1,  braking: -2,  lateral_g: 9   },
+  overspeed:        { acceleration: 5,  braking: 0,   lateral_g: 1   },
+}
+
+// Speed effect per preset (applied to lastSpeed)
+const SPEED_EFFECT = {
+  harsh_brake:      () => { lastSpeed = Math.max(0,   lastSpeed - 25) },  // slam brakes — big drop
+  harsh_accel:      () => { lastSpeed = Math.min(120, lastSpeed + 15) },  // floor it — big jump
+  sharp_turn_left:  () => { lastSpeed = Math.max(0,   lastSpeed - 8)  },  // slow for turn
+  sharp_turn_right: () => { lastSpeed = Math.max(0,   lastSpeed - 8)  },  // slow for turn
+  overspeed:        () => { lastSpeed = 110 },                             // force 110
+}
+
+function sendPreset(name) {
+  clearInterval(decayInterval)   // stop any ongoing decay
+  SPEED_EFFECT[name]()           // apply speed change
+  updateSpeedDisplay(lastSpeed)
+  postSensor({ ...PRESETS[name], speed: lastSpeed })
+  addEvent('warning', `${name.replace(/_/g,' ')} — speed: ${Math.round(lastSpeed)} km/h`)
+}
+
+// ─── Post to backend ──────────────────────────────────────────────────────
+async function postSensor(data) {
+  const payload = { ...data, driver_id: DRIVER_ID }
+  try {
+    const r = await fetch(`${API}/api/sensor`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    const json = await r.json()
+    setConnected(true)
+
+    if (json.alerts && json.alerts.length > 0) {
+      json.alerts.forEach(a => addEvent(a.severity, `${a.type.replace(/_/g,' ')} — ${a.message}`))
+      if (navigator.vibrate) navigator.vibrate([200, 100, 200])
+    }
+  } catch (e) {
+    setConnected(false)
+  }
+}
+
+// ─── Manual Speed Control ─────────────────────────────────────────────────
+let accelHeld = false
+let accelInterval = null
+let decayInterval = null
+
+function accelStart(e) {
+  e.preventDefault()
+  if (accelHeld) return
+  accelHeld = true
+  clearInterval(decayInterval)
+  document.getElementById('accel-btn').style.background = 'rgba(0,255,136,0.35)'
+
+  // Increase speed by 2 km/h every 200ms while held
+  accelInterval = setInterval(() => {
+    lastSpeed = Math.min(120, lastSpeed + 2)
+    updateSpeedDisplay(lastSpeed)
+    postSensor({ speed: lastSpeed, acceleration: 3, braking: 0, lateral_g: 0 })
+  }, 200)
+}
+
+function accelEnd() {
+  if (!accelHeld) return
+  accelHeld = false
+  clearInterval(accelInterval)
+  document.getElementById('accel-btn').style.background = 'rgba(0,255,136,0.15)'
+
+  // Decay speed by 2-3 km/h every 800ms when released
+  decayInterval = setInterval(() => {
+    if (lastSpeed <= 0) { clearInterval(decayInterval); return }
+    lastSpeed = Math.max(0, lastSpeed - 2)
+    updateSpeedDisplay(lastSpeed)
+    postSensor({ speed: lastSpeed, acceleration: 0, braking: 0, lateral_g: 0 })
+  }, 800)
+}
+function addEvent(severity, message) {
+  const list = document.getElementById('event-list')
+  const now = new Date().toLocaleTimeString('en-IN', { hour12: false })
+  const div = document.createElement('div')
+  div.className = `event-item ${severity}`
+  div.innerHTML = `<span class="event-time">${now}</span><span>${message}</span>`
+  list.insertBefore(div, list.firstChild)
+  if (list.children.length > 30) list.removeChild(list.lastChild)
+}
+</script>
+</body>
+</html>

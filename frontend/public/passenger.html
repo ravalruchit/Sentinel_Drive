@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>SentinelDrive — Passenger Safety</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0e1a;
+      color: #e2e8f0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 16px 40px;
+    }
+
+    .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .logo-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.4);
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .logo h1 { font-size: 18px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+    .logo p  { font-size: 11px; color: #6b7280; }
+
+    .card {
+      width: 100%; max-width: 420px;
+      background: #111827; border: 1px solid #1f2937; border-radius: 20px;
+      overflow: hidden; margin-bottom: 14px;
+    }
+
+    .safety-banner {
+      padding: 28px 20px; text-align: center;
+    }
+    .safety-banner.green  { background: linear-gradient(135deg, #052e16, #0d1117); border-bottom: 2px solid #166534; }
+    .safety-banner.yellow { background: linear-gradient(135deg, #1c1a05, #0d1117); border-bottom: 2px solid #854d0e; }
+    .safety-banner.red    { background: linear-gradient(135deg, #1c0505, #0d1117); border-bottom: 2px solid #991b1b; }
+
+    .safety-icon { font-size: 52px; margin-bottom: 12px; }
+    .safety-level {
+      font-size: 28px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase;
+    }
+    .safety-level.green  { color: #00ff88; text-shadow: 0 0 20px #00ff8866; }
+    .safety-level.yellow { color: #ffd700; text-shadow: 0 0 20px #ffd70066; }
+    .safety-level.red    { color: #ff3b3b; text-shadow: 0 0 20px #ff3b3b66; }
+    .safety-sub { font-size: 13px; color: #9ca3af; margin-top: 6px; }
+
+    .score-ring-wrap { display: flex; justify-content: center; margin: 16px 0 8px; position: relative; }
+
+    .driver-info { padding: 16px 20px; }
+    .driver-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .driver-avatar { font-size: 36px; }
+    .driver-name { font-size: 16px; font-weight: 700; }
+    .driver-sub  { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .info-item {
+      background: #0a0e1a; border: 1px solid #1f2937; border-radius: 10px; padding: 10px 12px;
+    }
+    .info-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+    .info-value { font-size: 14px; font-weight: 600; }
+
+    .stats-row { display: flex; gap: 10px; padding: 0 20px 16px; }
+    .stat-box {
+      flex: 1; background: #0a0e1a; border: 1px solid #1f2937; border-radius: 10px;
+      padding: 10px; text-align: center;
+    }
+    .stat-num  { font-size: 20px; font-weight: 800; }
+    .stat-lbl  { font-size: 10px; color: #6b7280; margin-top: 2px; }
+
+    /* Night mode badge */
+    .night-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      background: rgba(0,100,255,0.15); border: 1px solid rgba(0,150,255,0.4);
+      color: #60a5fa; margin-bottom: 12px;
+    }
+
+    /* AI status bar */
+    .ai-bar { padding: 14px 20px; }
+    .ai-bar-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .ai-row { display: flex; align-items: center; gap-10px; margin-bottom: 8px; }
+    .ai-row-label { font-size: 12px; color: #9ca3af; width: 100px; flex-shrink: 0; }
+    .ai-track { flex: 1; height: 6px; background: #1f2937; border-radius: 3px; overflow: hidden; margin: 0 10px; }
+    .ai-fill { height: 100%; border-radius: 3px; transition: width 0.8s ease; }
+    .ai-val { font-size: 11px; font-weight: 700; width: 36px; text-align: right; }
+
+    .refresh-btn {
+      width: 100%; max-width: 420px; padding: 14px;
+      background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3);
+      color: #00d4ff; border-radius: 12px; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; margin-bottom: 14px;
+    }
+    .refresh-btn:hover { background: rgba(0,212,255,0.2); }
+
+    .footer { margin-top: 16px; text-align: center; font-size: 11px; color: #374151; }
+
+    .loading { text-align: center; padding: 60px 20px; color: #6b7280; }
+    .loading .spinner {
+      width: 36px; height: 36px; border: 3px solid #1f2937;
+      border-top-color: #00d4ff; border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-box {
+      width: 100%; max-width: 420px; padding: 24px; text-align: center;
+      background: rgba(255,59,59,0.05); border: 1px solid rgba(255,59,59,0.3);
+      border-radius: 16px; color: #ff3b3b;
+    }
+
+    .pulse { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+    .live-dot {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 11px; color: #00ff88;
+    }
+    .live-dot span { width: 7px; height: 7px; border-radius: 50%; background: #00ff88; animation: pulse 1.5s infinite; }
+
+    .qr-hint {
+      width: 100%; max-width: 420px; padding: 12px 16px;
+      background: rgba(0,212,255,0.05); border: 1px solid rgba(0,212,255,0.15);
+      border-radius: 12px; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .qr-hint p { font-size: 11px; color: #6b7280; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<div class="logo">
+  <div class="logo-icon">🚌</div>
+  <div>
+    <h1>SentinelDrive</h1>
+    <p>Passenger Safety Portal</p>
+  </div>
+</div>
+
+<div id="content">
+  <div class="loading">
+    <div class="spinner"></div>
+    <p>Loading driver safety status...</p>
+  </div>
+</div>
+
+<button class="refresh-btn" onclick="load()" style="display:none" id="refresh-btn">
+  🔄 Refresh Status
+</button>
+
+<div class="qr-hint" id="qr-hint" style="display:none">
+  <span style="font-size:20px">📡</span>
+  <p>This page auto-refreshes every 10 seconds. You are viewing live safety data for your bus driver monitored by SentinelDrive AI.</p>
+</div>
+
+<div class="footer">
+  Powered by SentinelDrive AI Safety System<br>
+  Data updates every 10 seconds
+</div>
+
+<script>
+  const params   = new URLSearchParams(window.location.search)
+  const driverId = params.get('driver') || 'DRV-001'
+
+  const ICONS = { SAFE: '✅', CAUTION: '⚠️', DANGER: '🚨' }
+  const MESSAGES = {
+    SAFE:    'Your driver is alert and driving safely.',
+    CAUTION: 'Minor fatigue detected. Driver has been alerted.',
+    DANGER:  'Critical fatigue detected. Emergency protocols active.',
+  }
+
+  async function load() {
+    try {
+      const res = await fetch(`/api/passenger/${driverId}`)
+      if (!res.ok) throw new Error('Driver not found')
+      const d = await res.json()
+      render(d)
+      document.getElementById('refresh-btn').style.display = 'block'
+      document.getElementById('qr-hint').style.display = 'flex'
+    } catch (e) {
+      document.getElementById('content').innerHTML = `
+        <div class="error-box">
+          <p style="font-size:32px;margin-bottom:12px">⚠️</p>
+          <p style="font-weight:700;margin-bottom:8px">Unable to load driver status</p>
+          <p style="font-size:12px;color:#9ca3af">${e.message}</p>
+        </div>`
+      document.getElementById('refresh-btn').style.display = 'block'
+    }
+  }
+
+  function aiBar(label, value, color) {
+    const pct = Math.min(100, Math.round(value))
+    return `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="font-size:12px;color:#9ca3af;width:110px;flex-shrink:0">${label}</span>
+        <div style="flex:1;height:6px;background:#1f2937;border-radius:3px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${color};border-radius:3px;transition:width 0.8s ease;box-shadow:0 0 6px ${color}66"></div>
+        </div>
+        <span style="font-size:11px;font-weight:700;color:${color};width:36px;text-align:right">${pct}%</span>
+      </div>`
+  }
+
+  function render(d) {
+    const c = d.safety_color
+    const scoreColor = c === 'green' ? '#00ff88' : c === 'yellow' ? '#ffd700' : '#ff3b3b'
+    const circumference = 2 * Math.PI * 40
+    const offset = circumference - (d.safety_score / 100) * circumference
+    const isNight = d.night_driving === true
+
+    // AI component scores (0-100 scale from safety_score proxy)
+    const eyeScore   = Math.max(0, 100 - (d.incidents_today * 8))
+    const alertScore = d.safety_score
+    const speedScore = d.current_speed > 80 ? Math.max(0, 100 - (d.current_speed - 80) * 2) : 100
+
+    document.getElementById('content').innerHTML = `
+      <div class="card">
+        <!-- Safety banner -->
+        <div class="safety-banner ${c}">
+          ${isNight ? `<div class="night-badge">🌙 Night Driving Mode — Enhanced Monitoring Active</div>` : ''}
+          <div class="safety-icon ${d.safety_level === 'SAFE' ? '' : 'pulse'}">${ICONS[d.safety_level]}</div>
+          <div class="safety-level ${c}">${d.safety_level}</div>
+          <p class="safety-sub">${MESSAGES[d.safety_level]}</p>
+
+          <!-- Score ring -->
+          <div class="score-ring-wrap">
+            <svg width="100" height="100" viewBox="0 0 100 100" style="transform:rotate(-90deg)">
+              <circle cx="50" cy="50" r="40" fill="none" stroke="#1f2937" stroke-width="10"/>
+              <circle cx="50" cy="50" r="40" fill="none" stroke="${scoreColor}" stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="${circumference}"
+                stroke-dashoffset="${offset}"
+                style="filter:drop-shadow(0 0 6px ${scoreColor});transition:stroke-dashoffset 1s ease"/>
+            </svg>
+          </div>
+          <div style="margin-top:-8px">
+            <span style="font-size:28px;font-weight:800;color:${scoreColor}">${d.safety_score}</span>
+            <span style="font-size:12px;color:#6b7280">/100 Safety Score</span>
+          </div>
+
+          <div style="margin-top:10px" class="live-dot">
+            <span></span> Live Monitoring Active
+          </div>
+        </div>
+
+        <!-- Driver info -->
+        <div class="driver-info">
+          <div class="driver-header">
+            <div class="driver-avatar">👨‍✈️</div>
+            <div>
+              <div class="driver-name">${d.driver_name}</div>
+              <div class="driver-sub">${d.vehicle} · ${d.shift}</div>
+            </div>
+            <div style="margin-left:auto">
+              <span class="badge" style="background:${scoreColor}22;border:1px solid ${scoreColor}44;color:${scoreColor}">
+                <span class="badge-dot" style="background:${scoreColor}"></span>
+                ⭐ ${d.rating.toFixed(1)}
+              </span>
+            </div>
+          </div>
+
+          <div class="info-grid">
+            <div class="info-item">
+              <div class="info-label">Route</div>
+              <div class="info-value" style="font-size:11px;color:#00d4ff">${d.route}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Current Speed</div>
+              <div class="info-value" style="color:${d.current_speed > 80 ? '#ff3b3b' : '#00ff88'}">${d.current_speed} km/h</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Trips Today</div>
+              <div class="info-value" style="color:#00d4ff">${d.trips_completed}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">Last Updated</div>
+              <div class="info-value" style="font-size:12px;color:#9ca3af">${d.last_updated}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Safety Components -->
+      <div class="card">
+        <div style="padding:16px 20px">
+          <p style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">🤖 AI Safety Analysis</p>
+          ${aiBar('Driver Alertness', alertScore, scoreColor)}
+          ${aiBar('Eye Monitoring', eyeScore, eyeScore > 70 ? '#00ff88' : eyeScore > 40 ? '#ffd700' : '#ff3b3b')}
+          ${aiBar('Speed Safety', speedScore, speedScore > 70 ? '#00ff88' : '#ffd700')}
+          ${isNight ? aiBar('Night Risk Level', Math.min(100, 30 + d.incidents_today * 10), '#60a5fa') : ''}
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="card" style="padding:16px 20px">
+        <p style="font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Today's Performance</p>
+        <div class="stats-row" style="padding:0">
+          <div class="stat-box">
+            <div class="stat-num" style="color:${d.incidents_today > 3 ? '#ff3b3b' : '#00ff88'}">${d.incidents_today}</div>
+            <div class="stat-lbl">Incidents</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color:#00d4ff">${d.avg_speed}</div>
+            <div class="stat-lbl">Avg km/h</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" style="color:${scoreColor}">${d.safety_score}</div>
+            <div class="stat-lbl">Score</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Safety message -->
+      <div class="card" style="padding:16px 20px;border-color:${scoreColor}33">
+        <p style="font-size:11px;color:#6b7280;margin-bottom:8px">🛡️ PASSENGER NOTICE</p>
+        <p style="font-size:13px;color:#d1d5db;line-height:1.6">
+          ${d.safety_level === 'SAFE'
+            ? `This bus is monitored by SentinelDrive AI${isNight ? ' with enhanced night driving detection' : ''}. Your driver is alert and all safety systems are active.`
+            : d.safety_level === 'CAUTION'
+            ? `Mild fatigue has been detected${isNight ? ' during night driving' : ''}. The driver has been alerted and is being monitored closely.`
+            : '⚠️ Critical fatigue detected. Emergency protocols are active. Please remain seated and calm.'}
+        </p>
+        ${d.safety_level === 'DANGER' ? `
+          <div style="margin-top:12px;padding:10px;background:rgba(255,59,59,0.1);border:1px solid rgba(255,59,59,0.3);border-radius:8px">
+            <p style="font-size:12px;color:#ff3b3b;font-weight:600">🚨 Emergency: Call 108 or 100</p>
+          </div>` : ''}
+        ${isNight && d.safety_level !== 'DANGER' ? `
+          <div style="margin-top:10px;padding:8px 12px;background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:8px">
+            <p style="font-size:11px;color:#60a5fa">🌙 Night driving detected — AI sensitivity is increased for your safety.</p>
+          </div>` : ''}
+      </div>
+    `
+  }
+
+  load()
+  setInterval(load, 10000)
+</script>
+</body>
+</html>
