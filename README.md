@@ -25,6 +25,32 @@ graph TD
 ```
 
 ---
+## 🛠️ Tech Stack
+
+### Frontend
+- React
+- JavaScript / JSX
+- Tailwind CSS
+- Vite
+
+### Backend
+- Python
+- FastAPI
+- WebSockets
+
+### Computer Vision
+- OpenCV
+- Google MediaPipe Face Landmarker
+
+### APIs & Location
+- OpenStreetMap
+- Overpass API
+
+### Development Tools
+- Git
+- GitHub
+- npm
+- Uvicorn
 
 ## ✨ Core Features
 
