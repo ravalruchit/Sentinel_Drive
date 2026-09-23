@@ -101,20 +101,22 @@ SentinelDrive/
 
 ---
 
-## 🔒 Security & Hardening (Before Publishing to GitHub)
+## 🔐 Security
 
-If you plan to publish this repository to a public GitHub profile, please make sure you **do not hardcode secrets or production passwords**. Follow these guidelines:
+Before running or deploying SentinelDrive:
 
-1.  **Change Default Credentials**: The default login password and secret keys are currently hardcoded in [auth.py](file:///c:/Users/Raval%20Ruchit/Desktop/Techeys_SafetyTech/SentinelDrive/backend/auth.py).
-    *   Change the default password value `sentinel@2024` on line 15.
-    *   Change the `SECRET_KEY` on line 7 before deploying.
-2.  **Environment Variables**: It is highly recommended to refactor [auth.py](file:///c:/Users/Raval%20Ruchit/Desktop/Techeys_SafetyTech/SentinelDrive/backend/auth.py) to read these configurations from environment variables (`os.getenv()`) using a `.env` file (ensure `.env` is listed in `.gitignore`):
-    ```python
-    import os
-    SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-default-safe-secret-key")
-    ```
-3.  **MediaPipe Binary**: The `face_landmarker.task` file will download automatically on first run if missing. You do not need to check this binary file into git.
+- Store credentials in environment variables.
+- Never commit `.env` files.
+- Never commit production secrets or API keys.
+- Use a strong, unique JWT secret.
+- Change any credentials that may have previously been exposed.
 
+Example environment configuration:
+
+```env
+JWT_SECRET_KEY=your-secure-secret
+ADMIN_PASSWORD=your-secure-password
+```
 ---
 
 ## 🛠️ Installation & Setup
