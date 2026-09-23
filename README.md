@@ -166,17 +166,3 @@ If you plan to publish this repository to a public GitHub profile, please make s
 4.  Open your browser and navigate to **[http://localhost:5173](http://localhost:5173)** (or the address printed by Vite).
 
 ---
-
-## 📝 Operating Instructions & Verification Plan
-
-1.  **Login**: Open the dashboard, enter `admin` as the username and your configured admin password (default: `sentinel@2024`).
-2.  **Select Driver**: Choose a driver profile from the Fleet Sidebar to view their active telemetry status.
-3.  **Start Engine**: Click the **Start Engine** button. This opens the camera loop. The webcam indicator light should turn on, and the face mesh overlay will render over your live camera feed.
-4.  **Calibration**: Keep your head straight, look directly at the camera, and avoid yawning for the first 2 seconds. The dynamic calibration progress bar will load to 100%.
-5.  **DMS Alerts Test**:
-    *   *Drowsiness*: Close your eyes for over 0.5 seconds. A continuous warning buzzer will beep, and the voice announcement will warn you.
-    *   *Yawning*: Yawn clearly. The dashboard will trigger a warning horn sound and drop points if prolonged yawning is detected.
-    *   *Distraction*: Look away from the camera or tilt your head up/down. A posture or look-away warning will trigger in the log.
-6.  **Incident Clips**: After triggering a drowsiness or yawning event, visit the **Incident Clips** tab to play back or download the recorded 20-second MP4 evidence video.
-7.  **Telemetry Simulation**: Toggle G-force indicators in the simulator dashboard to inject harsh maneuvers. Observe immediate score drops and logs.
-
